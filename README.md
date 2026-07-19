@@ -1,10 +1,10 @@
-# ✈️ Flight Delay Prediction & Operational Analysis
+#  Flight Delay Prediction & Operational Analysis
 
 An end-to-end data science and machine learning pipeline to analyze historical flight data, predict arrival delays (occurrence and duration), and quantify controllable operational factors using a custom **Operational Adjustability Index (OAI)** and **SHAP (SHapley Additive Explanations)**.
 
 ---
 
-## 📌 Project Overview
+##  Project Overview
 Flight delays result in significant financial losses for airlines and scheduling challenges for passengers. This project uses a dataset of approximately **179,000 flight records** to:
 1. **Identify** key drivers of arrival delays.
 2. **Predict** delay occurrences (Classification) and delay duration (Regression).
@@ -13,7 +13,7 @@ Flight delays result in significant financial losses for airlines and scheduling
 
 ---
 
-## 📊 Dataset & Feature Schema
+##  Dataset & Feature Schema
 The dataset consists of historical flight records containing operational characteristics and delay breakdowns.
 
 ### Complete Data Dictionary & Explanations
@@ -48,12 +48,12 @@ The dataset contains the following columns, describing temporal context, airline
 
 | Target Feature | Type | Definition & Purpose |
 | :--- | :---: | :--- |
-| **is_delayed** | Binary | **Classification Target**: Set to `1` if the arrival delay `arr_del15` > 0 (delayed 15+ minutes), otherwise `0`. |
-| **arr_delay_oai** | Continuous | **Regression Target**: OAI-weighted delay severity score prioritizing controllable factors ($2.0 \times \text{carrier} + 2.0 \times \text{late\_aircraft} + 1.0 \times (\text{weather} + \text{nas} + \text{security})$). |
+| **is_delayed** | Binary | **Classification Target**: Set to `1` if the arrival delay `arr_del15` > 0 (delayed by at least 15 minutes); otherwise `0`. |
+| **arr_delay_oai** | Continuous | **Regression Target**: OAI-weighted delay severity score computed as **2 × (Carrier Delay + Late Aircraft Delay) + (Weather Delay + NAS Delay + Security Delay)**. Carrier Delay and Late Aircraft Delay receive twice the weight because they represent controllable operational factors. |
 
 ---
 
-## ⚙️ Methodology & Pipeline
+##  Methodology & Pipeline
 
 The pipeline follows a structured machine learning workflow:
 
@@ -77,16 +77,44 @@ graph TD
 *   **Imbalance Correction**: Applied **SMOTE (Synthetic Minority Over-sampling Technique)** with a 30% minority sampling strategy to address class imbalance during classification training.
 
 ### 2. Operational Adjustability Index (OAI)
-A custom metric designed to prioritize controllable delays over uncontrollable environmental delays.
-*   **Concept**: Factors like weather or NAS capacity are uncontrollable, while crew schedules, turnaround procedures, and airline-specific carrier delays are controllable.
-*   **OAI Target Formula**:
-    $$\text{OAI-Weighted Delay} = 2.0 \times (\text{carrier\_delay} + \text{late\_aircraft\_delay}) + 1.0 \times (\text{weather\_delay} + \text{nas\_delay} + \text{security\_delay})$$
-*   **OAI Model Interpretability Score**: Calculated using SHAP feature importances to determine the percentage of predictions driven by controllable features:
-    $$\text{OAI} = \frac{\sum |SHAP_{\text{controllable}}|}{\sum |SHAP_{\text{total}}|}$$
 
+A custom metric designed to prioritize controllable operational delays over uncontrollable environmental delays.
+
+* **Concept:** Weather, NAS capacity, and security delays are largely uncontrollable, whereas carrier operations and late aircraft turnaround are directly influenced by airline operational efficiency.
+
+* **OAI-Weighted Delay Formula:**
+
+$$
+D_{OAI} = 2(CD + LAD) + (WD + ND + SD)
+$$
+
+where
+
+- \(CD\) = Carrier Delay
+- \(LAD\) = Late Aircraft Delay
+- \(WD\) = Weather Delay
+- \(ND\) = NAS Delay
+- \(SD\) = Security Delay
+
+Carrier-related and late-aircraft delays are assigned twice the weight because they represent operational factors that airlines can actively improve.
+
+* **Operational Adjustability Index (Model Interpretability):**
+
+$$
+\mathrm{OAI} =
+\frac{\sum |SHAP_{controllable}|}
+{\sum |SHAP_{total}|}
+$$
+
+where
+
+- **Numerator:** Total SHAP contribution from controllable features.
+- **Denominator:** Total SHAP contribution from all features.
+
+An OAI value closer to **1** indicates that model predictions are primarily driven by controllable operational factors, whereas a value closer to **0** indicates that external factors dominate.
 ---
 
-## 🤖 Model Performance & Evaluation
+##  Model Performance & Evaluation
 
 Multiple architectures were built, tuned, and compared for both classification and regression.
 
@@ -97,7 +125,7 @@ Multiple architectures were built, tuned, and compared for both classification a
 | :--- | :---: | :---: | :---: | :--- |
 | **Logistic Regression** | 71.0% | 0.40 | 0.69 | Collapses on positive class (61% recall, 0.09 precision); not usable. |
 | **XGBoost Classifier** | 88.0% | 0.89 | 0.76 | Decent overall performance, but slightly higher false positive rate. |
-| **Random Forest Classifier** 🏆 | **91.0%** | **0.91** | **0.77** | **Selected**: Best balance of precision, F1-score, and recall on delayed class. |
+| **Random Forest Classifier**  | **91.0%** | **0.91** | **0.77** | **Selected**: Best balance of precision, F1-score, and recall on delayed class. |
 
 ### 2. Regression (Delay Duration Prediction)
 *Trained on the custom OAI-weighted delay target.*
@@ -106,7 +134,7 @@ Multiple architectures were built, tuned, and compared for both classification a
 | :--- | :---: | :---: | :---: | :--- |
 | **Linear Regression** | $1.2 \times 10^7$ | $4.5 \times 10^8$ | -11,000.0 | Failed completely due to high dimensionality and multicollinearity. |
 | **XGBoost Regressor** | 2,752 | 5,850 | 0.81 | Decent baseline regressor with quick training execution. |
-| **Random Forest Regressor** 🏆 | **2,739** | **5,720** | **0.83** | **Selected**: Best predictive power, lowest errors, and highest $R^2$ score. |
+| **Random Forest Regressor**  | **2,739** | **5,720** | **0.83** | **Selected**: Best predictive power, lowest errors, and highest $R^2$ score. |
 
 ---
 
@@ -120,7 +148,7 @@ By evaluating the top 50 features of the Random Forest models via **SHAP (SHaple
 
 ---
 
-## 📌 Actionable Consulting Recommendations
+##  Actionable Consulting Recommendations
 
 Based on the EDA and machine learning findings, the following strategies are proposed:
 
